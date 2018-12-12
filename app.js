@@ -154,7 +154,13 @@ var UIController  = (function(){ //it is treated as the function expression and 
       document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
       document.querySelector(DOMStrings.incomeLabel).textContent = obj.totalInc;
       document.querySelector(DOMStrings.expensesLabel).textContent = obj.totalExp;
-      document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage;
+
+
+      if(obj.percentge>0){
+          document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
+      }else{
+          document.querySelector(DOMStrings.percentageLabel).textContent = '---';
+      }
     },
   }
 }
@@ -191,17 +197,14 @@ var controller = (function(budgetCtrl,UICtrl){
       //1. get input fields
       var input = UICtrl.getInput()
       if(input.description !== "" && !isNaN(input.value) && input.value>0 ){
-
         //2. add the item to the budget controller
         var newItem =budgetCtrl.addItem(input.type, input.description, input.value )
         //3.add the item to the UI
         UICtrl.addListItem(newItem,input.type )
         //4. clear the fields
         UICtrl.clearFields();
-
         //5. calculate and update the budget
         updateBudget();
-
       }
 
 
@@ -210,7 +213,11 @@ var controller = (function(budgetCtrl,UICtrl){
 
     return {
         init:function(){
-        setUp()},
+        setUp()
+        UICtrl.displayBudget({  budget:0,
+                                totalInc:0,
+                                totalExp:0,
+                                percentage:0})},
         addItem:function(){
           ctrlAddItem()
         }
