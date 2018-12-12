@@ -13,22 +13,37 @@ var budgetController = (
     var totalExpenses = 0;
     //data strructure containing all of the data from the budget controller
     var data = {
-      allitems:{
+      allItems:{
         inc:[],
         exp:[]
       },
       totals:{
         inc:0,
         exp:0
-      }
+      },
+      budget:0,
+      percentage:-1
+
     }
+
+    var calculateTotal = function(type){
+      var sum = 0;
+        data.allItems[type].forEach(function(cur){
+          sum = sum + cur.value
+        })
+        data.totals[type] = sum;
+    }
+
+
+
+
     return {
       //add Item method -- accept type description and value from the UI controller through the gloabal controller
       addItem:function(type, desc, val){
          var newItem, ID;
          //create new id
-         if(data.allitems[type].length>0){
-            ID = data.allitems[type][data.allitems[type].length - 1].id + 1;
+         if(data.allItems[type].length>0){
+            ID = data.allItems[type][data.allItems[type].length - 1].id + 1;
          }else{
            ID = 0;
          }
@@ -42,9 +57,32 @@ var budgetController = (
            newItem = new Income(ID, desc,val);
          }
          //push it to the data structure
-         data.allitems[type].push(newItem);
+         data.allItems[type].push(newItem);
          //return the elememt
          return newItem; //other module will have dfirect access to the newItem that has been created
+      },
+      calculateBudget:function(){
+        //calculate all of the income
+        calculateTotal('inc');
+        //calculate all of the expenses
+        calculateTotal('exp');
+        //calculate the total
+        data.budget = data.totals.inc - data.totals.exp;
+        //calculate percent
+        if(data.totals.inc>0){
+          data.percentage = Math.round((data.totals.exp/data.totals.inc) * 100)
+        }else{
+          data.percentage = -1;
+        }
+
+      },
+      getBudget:function(){
+        return {
+          budget:data.budget,
+          totalInc:data.totals.inc,
+          totalExp:data.totals.exp,
+          percentage:data.percentage
+        }
       },
       print:function(){
         console.log(data)
@@ -52,29 +90,30 @@ var budgetController = (
     }
 }
 )()
-//immeditately invoked function of the UI controller
 var UIController  = (function(){ //it is treated as the function expression and immediately executes
 
   var DOMStrings = {
-    budget:'.budget__value',
+    budgetLabel:'.budget__value',
     value:'.add__value',
     inputType:'.add__type',
     description :'.add__description',
     addButton:'.add__btn',
     incomeContainer:'.income__list',
-    expensesContainer:'.expenses__list'
+    expensesContainer:'.expenses__list',
+    incomeLabel:'.budget__income--value',
+    expensesLabel:'.budget__expenses--value',
+    percentageLabel:'.budget__expenses--percentage'
   };
 
   return{ // the return object contains all of the methods publicly available
     getInput:function(){
       return{
-        budget: document.querySelector(DOMStrings.budget).textContent,
+        budget: document.querySelector(DOMStrings.budgetLabel).textContent,
         value: parseFloat(document.querySelector(DOMStrings.value).value),
         type: document.querySelector(DOMStrings.inputType).value,
         description: document.querySelector(DOMStrings.description).value
         }
     },
-
     addListItem:function(obj,type){
       console.log("in the addList --- type -- ",type);
       //Create HTML string as the HTML placeholder
@@ -107,14 +146,20 @@ var UIController  = (function(){ //it is treated as the function expression and 
       fieldsArr[0].focus();
 
     },
-
     getDOMStrings:function(){
       return DOMStrings
     },
 
+    displayBudget:function(obj){
+      document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
+      document.querySelector(DOMStrings.incomeLabel).textContent = obj.totalInc;
+      document.querySelector(DOMStrings.expensesLabel).textContent = obj.totalExp;
+      document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage;
+    },
   }
 }
 )()
+
 //immeditately invoked function of the global controller
 var controller = (function(budgetCtrl,UICtrl){
     var setUp = function(){
@@ -131,10 +176,12 @@ var controller = (function(budgetCtrl,UICtrl){
 
     var updateBudget = function(){
       //1.calculate budget
-
+      budgetCtrl.calculateBudget()
       //2.return the budget
+      var budgetTotals = budgetCtrl.getBudget()
 
       //6.Display the budget on the UI
+      UICtrl.displayBudget(budgetTotals)
 
     }
 
